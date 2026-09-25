@@ -80,6 +80,34 @@ describe("Workers AI adapter", () => {
     );
     expect(run).toHaveBeenCalledWith("typesafe/jev", sampleInput, { signal });
   });
+  it("maps AI Gateway credit exhaustion to a safe billing error", async () => {
+    const upstreamError = new Error("2021: Insufficient AI Gateway credits");
+    upstreamError.name = "AiGatewayError";
+    const run = vi.fn(async () => {
+      throw upstreamError;
+    });
+    const provider = createWorkersAIProvider({
+      AI: { run } as unknown as AppEnv["AI"],
+    });
+    await expect(provider.evaluate(sampleInput, { signal })).rejects.toMatchObject({
+      status: 503,
+      code: "UPSTREAM_BILLING_REQUIRED",
+      message: "Cloudflare AI Gateway credits are required to use Jev.",
+    });
+  });
+  it("sanitizes other AI binding failures", async () => {
+    const run = vi.fn(async () => {
+      throw new Error("private upstream details");
+    });
+    const provider = createWorkersAIProvider({
+      AI: { run } as unknown as AppEnv["AI"],
+    });
+    await expect(provider.evaluate(sampleInput, { signal })).rejects.toMatchObject({
+      status: 502,
+      code: "UPSTREAM_ERROR",
+      message: "Jev request failed.",
+    });
+  });
   it("requires the configured provider prerequisite", () => {
     expect(() => createProvider({} as AppEnv, config)).toThrow();
     expect(createProvider({ AI: {} } as AppEnv, config).id).toBe("workers-ai");

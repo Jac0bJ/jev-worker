@@ -17,6 +17,17 @@ export function createWorkersAIProvider(env: Pick<AppEnv, "AI">): JevProvider {
         );
       } catch (error) {
         if (signal.aborted) throw error;
+        if (
+          error instanceof Error &&
+          error.name === "AiGatewayError" &&
+          /^2021: Insufficient AI Gateway credits(?:\.|$)/.test(error.message)
+        ) {
+          throw new AppError(
+            503,
+            "UPSTREAM_BILLING_REQUIRED",
+            "Cloudflare AI Gateway credits are required to use Jev.",
+          );
+        }
         throw new AppError(502, "UPSTREAM_ERROR", "Jev request failed.");
       }
       return parseProviderResult(output, input);

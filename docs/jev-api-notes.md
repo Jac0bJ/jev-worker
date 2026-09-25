@@ -52,3 +52,7 @@ KV cache is best effort and eventually consistent: duplicate calls during races,
 Native rate limit is supported in Wrangler as ratelimits:[{name:"RATE_LIMITER",namespace_id:"1001",simple:{limit:60,period:60}}]. It is per location, not a global hard billing quota.
 KV can omit IDs for auto-provisioning in current Wrangler. Do not include fake namespace IDs.
 Cloudflare renamed vitest-pool-workers to vitest-plugin; user explicitly approved current plugin and Vitest >=4.1.
+
+## Live binding observation — 2026-09-25
+Wrangler OAuth device authorization succeeded. A real `env.AI.run("typesafe/jev",...)` probe returned `AiGatewayError` with message `2021: Insufficient AI Gateway credits`. The API maps that known code to HTTP 503 / UPSTREAM_BILLING_REQUIRED without exposing arbitrary upstream error messages. Cloudflare accepts the model call path but successful model output remains unverified until credits are funded.
+A real deployment automatically provisioned the KV namespace and uploaded the client key through `wrangler deploy --secrets-file .dev.vars`. The local secret file is ignored and was not committed.

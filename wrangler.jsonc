@@ -4,8 +4,7 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-09-25",
   "compatibility_flags": ["nodejs_compat"],
-  "ai": { "binding": "AI",
-    "remote": true },
+  "ai": { "binding": "AI", "remote": true },
   "kv_namespaces": [{ "binding": "JEV_CACHE" }],
   "ratelimits": [
     {
@@ -14,6 +13,7 @@
       "simple": { "limit": 60, "period": 60 },
     },
   ],
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
   "vars": {
     "JEV_PROVIDER": "workers-ai",
     "CONFIDENCE_AUTO": "0.9",
