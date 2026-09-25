@@ -4,9 +4,15 @@ A Cloudflare Worker that exposes [TypeSafe Jev](https://docs.typesafe.ai/api) as
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Jac0bJ/jev-worker)
 
-## Deploy and run
+## Two-minute deployment
 
-If your Cloudflare account, billing, and Wrangler login are ready, this is the short path:
+With a Cloudflare account and inference credits ready:
+
+1. Click **Deploy to Cloudflare** above and connect your GitHub account.
+2. Enter a strong random `CLIENT_API_KEYS` value when prompted. AI and KV bindings are provisioned from the template; no TypeSafe key is needed.
+3. Open the deployed `/health` URL, then try the form-spam curl below with your key.
+
+For the CLI path, sign in with `npx wrangler login`, then:
 
 ```sh
 git clone https://github.com/Jac0bJ/jev-worker.git
@@ -16,7 +22,7 @@ npm run deploy
 npx wrangler secret put CLIENT_API_KEYS
 ```
 
-When prompted for `CLIENT_API_KEYS`, enter a strong random key (for example, generate one with `openssl rand -hex 32`). Keep it outside source control. Wrangler provisions the `JEV_CACHE` KV namespace from `wrangler.jsonc`; no namespace ID is needed in the template. Check `https://<your-worker>.workers.dev/health` after setting the secret. The button above offers the Cloudflare Git deployment flow once this repository is public. [Cloudflare's deploy-button guide](https://developers.cloudflare.com/workers/platform/deploy-buttons/) describes account setup and automatic resource provisioning. This flow may take longer than two minutes when the account or billing is not ready.
+When prompted for `CLIENT_API_KEYS`, enter a strong random key (for example, generate one with `openssl rand -hex 32`). Keep it outside source control. Wrangler provisions the `JEV_CACHE` KV namespace from `wrangler.jsonc`; no namespace ID is needed in the template. Check `https://<your-worker>.workers.dev/health` after setting the secret. The button above uses the Cloudflare Git deployment flow. [Cloudflare's deploy-button guide](https://developers.cloudflare.com/workers/platform/deploy-buttons/) describes account setup and automatic resource provisioning. This flow may take longer than two minutes when the account or billing is not ready.
 
 For local development, copy `.dev.vars.example` to `.dev.vars`, fill `CLIENT_API_KEYS`, and run `npm run dev`. The dev script sets `ENVIRONMENT=development`; it **does not** turn off authentication. Local requests to the Workers AI binding still use a remote model and may incur charges. An explicit `AUTH_ENABLED=false` is accepted only in development. Run `npm run lint`, `npm run typecheck`, and `npm test` before a change.
 
@@ -71,7 +77,9 @@ By default, `decision_confidence >= 0.9` routes to `auto`, `>= 0.6` to `review`,
 
 `JEV_PROVIDER=workers-ai` uses Cloudflare's `AI` binding and needs no TypeSafe API secret. To use TypeSafe's direct API, set `JEV_PROVIDER` to `typesafe` in `wrangler.jsonc`, set `TYPESAFE_API_KEY` with `npx wrangler secret put TYPESAFE_API_KEY` (or in local `.dev.vars`), and redeploy with `npm run deploy`. Calls go to `https://api.typesafe.ai/v1/systemone` with `jev-latest`. The provider is selected per deployment; there is no automatic fallback or retry.
 
-Defaults in `wrangler.jsonc` are a one-hour KV TTL, a 15-second upstream timeout, 20 batch items, concurrency 4, authentication on, and input logging off. `CLIENT_API_KEYS` may contain comma-separated keys for rotation. The built-in rate limiter allows 60 decision items per minute per client fingerprint and Cloudflare location; it is not a global spending cap. KV is eventually consistent and best effort, so concurrent requests can make duplicate billable inference calls and cache reads or writes can fail. `X-Cache: ERROR` reports a cache failure while returning a valid inference result. Set `CORS_ALLOWED_ORIGINS` to comma-separated exact origins for browser clients; the default denies cross-origin browser requests. `LOG_INPUTS=true` opts into logging raw inputs.
+Defaults in `wrangler.jsonc` are a one-hour KV TTL, a 15-second upstream timeout, 20 batch items, concurrency 4, authentication on, and input logging off. `CLIENT_API_KEYS` may contain comma-separated keys for rotation. The built-in rate limiter allows 60 decision items per minute per client fingerprint and Cloudflare location; it is not a global spending cap. KV is eventually consistent and best effort, so concurrent requests can make duplicate billable inference calls and cache reads or writes can fail. `X-Cache: ERROR` reports a cache failure while returning a valid inference result. Cache hits retain the original inference `usage`; those tokens are not newly billed by this Worker. Keys are client-isolated, so key rotation starts a separate cache. A model alias may change before a cached answer expires. Requests are limited to 64 KiB per decision, 1 MiB per batch, and 32 questions per item.
+
+Set `CORS_ALLOWED_ORIGINS` to comma-separated exact origins for browser clients; the default denies cross-origin browser requests. `LOG_INPUTS=true` opts into logging raw state.
 
 Jev is a third-party model on Cloudflare Workers AI, not a model hosted natively by Cloudflare. TypeSafe [prices Jev by input tokens](https://docs.typesafe.ai/models); output tokens are free under its listed pricing. Cloudflare credits, billing prerequisites, and current rates may differ by path, so check the [Cloudflare model page](https://developers.cloudflare.com/ai/models/typesafe/jev/) and your dashboard before running traffic. Local inference can also be billable. No live inference is required by CI.
 

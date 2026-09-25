@@ -2,7 +2,10 @@ import { AppError } from "./errors";
 import type { AppConfig } from "./types";
 
 export function corsHeaders(request: Request, config: AppConfig): Headers {
-  const headers = new Headers({ Vary: "Origin", "Access-Control-Expose-Headers": "X-Cache, X-Request-ID" });
+  const headers = new Headers({
+    Vary: "Origin",
+    "Access-Control-Expose-Headers": "X-Cache, X-Request-ID",
+  });
   const origin = request.headers.get("Origin");
   if (!origin) return headers;
   if (config.allowedOrigins.includes("*")) {
@@ -15,7 +18,10 @@ export function corsHeaders(request: Request, config: AppConfig): Headers {
   return headers;
 }
 
-export function handlePreflight(request: Request, config: AppConfig): Response | null {
+export function handlePreflight(
+  request: Request,
+  config: AppConfig,
+): Response | null {
   if (request.method !== "OPTIONS") return null;
   const headers = corsHeaders(request, config);
   headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");

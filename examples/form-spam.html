@@ -1,49 +1,102 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>jev-worker form spam demo</title>
-  <style>
-    body { max-width: 42rem; margin: 2rem auto; padding: 0 1rem; font: 16px/1.5 system-ui, sans-serif; }
-    label { display: block; margin: 1rem 0; font-weight: 600; }
-    input, textarea { display: block; box-sizing: border-box; width: 100%; margin-top: .3rem; padding: .65rem; font: inherit; }
-    textarea { min-height: 8rem; }
-    button { padding: .65rem 1rem; font: inherit; cursor: pointer; }
-    pre { overflow: auto; padding: 1rem; background: #f4f4f4; white-space: pre-wrap; }
-  </style>
-</head>
-<body>
-  <h1>Form spam demo</h1>
-  <p>For local testing. The key stays in this page's memory, but anyone using a browser can see a key supplied to it. Never embed a production key in a public page.</p>
-  <form id="demo">
-    <label>Worker URL <input id="url" type="url" value="http://localhost:8787" required></label>
-    <label>Client API key <input id="key" type="password" autocomplete="off" required></label>
-    <label>Message <textarea id="message" required>Hi! Is your product available for small teams?</textarea></label>
-    <button type="submit">Check message</button>
-  </form>
-  <pre id="result" role="status" aria-live="polite">Enter a key and check a message.</pre>
-  <script>
-    const form = document.querySelector('#demo');
-    const result = document.querySelector('#result');
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      result.textContent = 'Checking…';
-      const base = document.querySelector('#url').value.replace(/\/$/, '');
-      const key = document.querySelector('#key').value;
-      const text = document.querySelector('#message').value;
-      try {
-        const response = await fetch(`${base}/preset/form-spam`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-API-Key': key },
-          body: JSON.stringify({ text })
-        });
-        const body = await response.json();
-        result.textContent = JSON.stringify({ status: response.status, cache: response.headers.get('X-Cache'), body }, null, 2);
-      } catch (error) {
-        result.textContent = `Request failed: ${error.message}`;
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>jev-worker form spam demo</title>
+    <style>
+      body {
+        max-width: 42rem;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        font:
+          16px/1.5 system-ui,
+          sans-serif;
       }
-    });
-  </script>
-</body>
+      label {
+        display: block;
+        margin: 1rem 0;
+        font-weight: 600;
+      }
+      input,
+      textarea {
+        display: block;
+        box-sizing: border-box;
+        width: 100%;
+        margin-top: 0.3rem;
+        padding: 0.65rem;
+        font: inherit;
+      }
+      textarea {
+        min-height: 8rem;
+      }
+      button {
+        padding: 0.65rem 1rem;
+        font: inherit;
+        cursor: pointer;
+      }
+      pre {
+        overflow: auto;
+        padding: 1rem;
+        background: #f4f4f4;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Form spam demo</h1>
+    <p>
+      For local testing. The key stays in this page's memory, but anyone using a
+      browser can see a key supplied to it. Never embed a production key in a
+      public page.
+    </p>
+    <form id="demo">
+      <label
+        >Worker URL
+        <input id="url" type="url" value="http://localhost:8787" required
+      /></label>
+      <label
+        >Client API key
+        <input id="key" type="password" autocomplete="off" required
+      /></label>
+      <label
+        >Message
+        <textarea id="message" required>
+Hi! Is your product available for small teams?</textarea>
+      </label>
+      <button type="submit">Check message</button>
+    </form>
+    <pre id="result" role="status" aria-live="polite">
+Enter a key and check a message.</pre>
+    <script>
+      const form = document.querySelector("#demo");
+      const result = document.querySelector("#result");
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        result.textContent = "Checking…";
+        const base = document.querySelector("#url").value.replace(/\/$/, "");
+        const key = document.querySelector("#key").value;
+        const text = document.querySelector("#message").value;
+        try {
+          const response = await fetch(`${base}/preset/form-spam`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-API-Key": key },
+            body: JSON.stringify({ text }),
+          });
+          const body = await response.json();
+          result.textContent = JSON.stringify(
+            {
+              status: response.status,
+              cache: response.headers.get("X-Cache"),
+              body,
+            },
+            null,
+            2,
+          );
+        } catch (error) {
+          result.textContent = `Request failed: ${error.message}`;
+        }
+      });
+    </script>
+  </body>
 </html>

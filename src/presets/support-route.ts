@@ -3,7 +3,8 @@ export const description = "Route a support request to the right department.";
 export const questions: Questions = {
   department: {
     type: "choice",
-    instructions: "Choose the department best suited to resolve the main issue in this support request.",
+    instructions:
+      "Choose the department best suited to resolve the main issue in this support request.",
     criteria: {
       billing: "Payments, invoices, charges, refunds, or subscriptions.",
       bug: "A product error, broken behavior, or technical malfunction.",

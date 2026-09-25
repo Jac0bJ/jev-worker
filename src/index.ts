@@ -13,8 +13,15 @@ import { runBatch, summarizeBatchCache } from "./routes/batch";
 import type { AppEnv, AppConfig } from "./types";
 import type { JevProvider } from "./providers/types";
 
-type HonoEnv = { Bindings: AppEnv; Variables: { config: AppConfig; requestId: string } };
-export function createApp(options: { providerFactory?: (env: AppEnv, config: AppConfig) => JevProvider } = {}) {
+type HonoEnv = {
+  Bindings: AppEnv;
+  Variables: { config: AppConfig; requestId: string };
+};
+export function createApp(
+  options: {
+    providerFactory?: (env: AppEnv, config: AppConfig) => JevProvider;
+  } = {},
+) {
   const app = new Hono<HonoEnv>();
   const providerFactory = options.providerFactory ?? createProvider;
   app.onError((error, c) => {
@@ -40,47 +47,107 @@ export function createApp(options: { providerFactory?: (env: AppEnv, config: App
     }
     await next();
   });
-  app.get("/", c => c.json({
-    name: "jev-worker", version: "0.1.0", auth: "X-API-Key",
-    endpoints: { "POST /decide": "{state: string|object, questions: {...}, cache?: boolean}", "POST /decide/batch": "Array of decision requests", "POST /preset/:name": "{text: string}", "GET /health": "Configuration readiness; no inference" },
-    presets: Object.values(presets).map(({ name, description }) => ({ name, description })),
-    docs: "https://github.com/Jac0bJ/jev-worker",
-  }));
-  app.get("/health", c => {
+  app.get("/", (c) =>
+    c.json({
+      name: "jev-worker",
+      version: "0.1.0",
+      auth: "X-API-Key",
+      endpoints: {
+        "POST /decide":
+          "{state: string|object, questions: {...}, cache?: boolean}",
+        "POST /decide/batch": "Array of decision requests",
+        "POST /preset/:name": "{text: string}",
+        "GET /health": "Configuration readiness; no inference",
+      },
+      presets: Object.values(presets).map(({ name, description }) => ({
+        name,
+        description,
+      })),
+      docs: "https://github.com/Jac0bJ/jev-worker",
+    }),
+  );
+  app.get("/health", (c) => {
     assertReady(c.env, c.get("config"));
     return c.json({ status: "ok", provider: c.get("config").provider });
   });
-  app.post("/decide", async c => {
+  app.post("/decide", async (c) => {
     const config = c.get("config");
     const client = await authenticate(c.req.raw, c.env, config);
-    const input = parseDecisionRequest(await readJson(c.req.raw, MAX_ITEM_BYTES));
-    const process = createDecisionService({ env: c.env, config, client, provider: providerFactory(c.env, config), requestId: c.get("requestId") });
+    const input = parseDecisionRequest(
+      await readJson(c.req.raw, MAX_ITEM_BYTES),
+    );
+    const process = createDecisionService({
+      env: c.env,
+      config,
+      client,
+      provider: providerFactory(c.env, config),
+      requestId: c.get("requestId"),
+    });
     const outcome = await process(input);
     c.header("X-Cache", outcome.cache);
     return c.json(outcome.data);
   });
-  app.post("/decide/batch", async c => {
+  app.post("/decide/batch", async (c) => {
     const config = c.get("config");
     const client = await authenticate(c.req.raw, c.env, config);
-    const items = parseBatchRequest(await readJson(c.req.raw, MAX_BATCH_BYTES), config.batchMaxItems);
-    const process = createDecisionService({ env: c.env, config, client, provider: providerFactory(c.env, config), requestId: c.get("requestId") });
+    const items = parseBatchRequest(
+      await readJson(c.req.raw, MAX_BATCH_BYTES),
+      config.batchMaxItems,
+    );
+    const process = createDecisionService({
+      env: c.env,
+      config,
+      client,
+      provider: providerFactory(c.env, config),
+      requestId: c.get("requestId"),
+    });
     const results = await runBatch(items, config.batchConcurrency, process);
     c.header("X-Cache", summarizeBatchCache(results));
     return c.json({ results });
   });
-  app.post("/preset/:name", async c => {
+  app.post("/preset/:name", async (c) => {
     const config = c.get("config");
     const client = await authenticate(c.req.raw, c.env, config);
-    const { preset, input } = resolvePreset(c.req.param("name"), await readJson(c.req.raw, MAX_ITEM_BYTES));
-    const process = createDecisionService({ env: c.env, config, client, provider: providerFactory(c.env, config), requestId: c.get("requestId"), preset: preset.name });
+    const { preset, input } = resolvePreset(
+      c.req.param("name"),
+      await readJson(c.req.raw, MAX_ITEM_BYTES),
+    );
+    const process = createDecisionService({
+      env: c.env,
+      config,
+      client,
+      provider: providerFactory(c.env, config),
+      requestId: c.get("requestId"),
+      preset: preset.name,
+    });
     const outcome = await process(input);
     c.header("X-Cache", outcome.cache);
     return c.json(decoratePreset(preset.name, outcome.data));
   });
-  for (const path of ["/", "/health", "/decide", "/decide/batch", "/preset/:name"]) {
-    app.all(path, c => { c.header("Allow", path === "/" || path === "/health" ? "GET, HEAD, OPTIONS" : "POST, OPTIONS"); throw new AppError(405, "METHOD_NOT_ALLOWED", "Method not allowed for this endpoint."); });
+  for (const path of [
+    "/",
+    "/health",
+    "/decide",
+    "/decide/batch",
+    "/preset/:name",
+  ]) {
+    app.all(path, (c) => {
+      c.header(
+        "Allow",
+        path === "/" || path === "/health"
+          ? "GET, HEAD, OPTIONS"
+          : "POST, OPTIONS",
+      );
+      throw new AppError(
+        405,
+        "METHOD_NOT_ALLOWED",
+        "Method not allowed for this endpoint.",
+      );
+    });
   }
-  app.notFound(() => { throw new AppError(404, "NOT_FOUND", "Endpoint not found."); });
+  app.notFound(() => {
+    throw new AppError(404, "NOT_FOUND", "Endpoint not found.");
+  });
   return app;
 }
 export default createApp();

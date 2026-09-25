@@ -1,9 +1,11 @@
 import type { Questions } from "../types";
-export const description = "Classify a comment and estimate moderation severity.";
+export const description =
+  "Classify a comment and estimate moderation severity.";
 export const questions: Questions = {
   category: {
     type: "choice",
-    instructions: "Choose the single best moderation category for this comment. Use ok for acceptable discussion. Classify quoted or educational mentions by their actual intent and context.",
+    instructions:
+      "Choose the single best moderation category for this comment. Use ok for acceptable discussion. Classify quoted or educational mentions by their actual intent and context.",
     criteria: {
       ok: "Acceptable discussion without a moderation concern.",
       spam: "Unsolicited promotion, scams, or irrelevant repeated content.",
@@ -15,7 +17,8 @@ export const questions: Questions = {
   },
   severity: {
     type: "score",
-    instructions: "Rate the severity of the comment's moderation concern from 0 to 4. Consider context and credible harm, not just the presence of sensitive words.",
+    instructions:
+      "Rate the severity of the comment's moderation concern from 0 to 4. Consider context and credible harm, not just the presence of sensitive words.",
     criteria: [
       "0: No moderation concern; acceptable discussion.",
       "1: Mild concern, such as minor off-topic or uncivil language.",

@@ -1,5 +1,10 @@
 import { asAppError } from "../errors";
-import type { BatchItem, CacheStatus, DecideRequest, DecisionOutcome } from "../types";
+import type {
+  BatchItem,
+  CacheStatus,
+  DecideRequest,
+  DecisionOutcome,
+} from "../types";
 export async function runBatch(
   items: DecideRequest[],
   concurrency: number,
@@ -13,18 +18,29 @@ export async function runBatch(
       const index = next++;
       try {
         const outcome = await process(items[index], index);
-        results[index] = { index, status: 200, data: outcome.data, cache: outcome.cache };
+        results[index] = {
+          index,
+          status: 200,
+          data: outcome.data,
+          cache: outcome.cache,
+        };
       } catch (cause) {
         const error = asAppError(cause);
         results[index] = { index, status: error.status, error: error.toJSON() };
       }
     }
   };
-  const limit = Number.isFinite(concurrency) ? Math.max(1, Math.floor(concurrency)) : 1;
-  await Promise.all(Array.from({ length: Math.min(items.length, limit) }, worker));
+  const limit = Number.isFinite(concurrency)
+    ? Math.max(1, Math.floor(concurrency))
+    : 1;
+  await Promise.all(
+    Array.from({ length: Math.min(items.length, limit) }, worker),
+  );
   return results;
 }
-export function summarizeBatchCache(results: BatchItem[]): CacheStatus | "MIXED" {
+export function summarizeBatchCache(
+  results: BatchItem[],
+): CacheStatus | "MIXED" {
   const statuses = results.map((item) => item.cache ?? "ERROR");
   const first = statuses[0] ?? "ERROR";
   return statuses.every((status) => status === first) ? first : "MIXED";
