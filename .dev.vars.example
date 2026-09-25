@@ -1,0 +1,6 @@
+# Copy to .dev.vars and replace the empty value with a strong random client key.
+# For example: openssl rand -hex 32
+CLIENT_API_KEYS=
+
+# Only needed when JEV_PROVIDER=typesafe. Never commit a real key.
+# TYPESAFE_API_KEY=
